@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>RingSize</title>
+<meta name="description" content="Find your ring size. Match a ring on screen, or convert any measurement between US, UK, EU, Japan and India sizes.">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#ffffff; --ink:#111111; --muted:#8a8a8a; --line:#e8e8e8; --soft:#f4f4f4; --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0d0d0d; --ink:#f2f2f2; --muted:#8f8f8f; --line:#262626; --soft:#1a1a1a; }
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; }
+body{
+  margin:0; background:var(--bg); color:var(--ink); overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+  display:flex; flex-direction:column; height:100dvh; overflow:hidden;
+  max-width:560px; margin:0 auto;
+}
+header{
+  flex:none; display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-bottom:1px solid var(--line);
+}
+header img{ width:34px; height:34px; border-radius:9px; }
+header h1{ margin:0; font-size:18px; font-weight:700; letter-spacing:-0.2px; flex:1; }
+.icbtn{
+  border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  width:42px; height:42px; border-radius:12px; cursor:pointer; flex:none;
+  display:flex; align-items:center; justify-content:center;
+}
+.icbtn:active{ background:var(--soft); }
+.icbtn svg{ width:20px; height:20px; }
+#calNote{
+  flex:none; font-size:12px; color:var(--muted); text-align:center;
+  padding:7px 12px; border-bottom:1px solid var(--line);
+}
+#calNote b{ color:var(--ink); }
+.seg{ display:flex; border:1px solid var(--line); border-radius:11px; overflow:hidden; flex:none; }
+.seg button{
+  border:none; background:var(--bg); color:var(--muted); min-width:72px; height:38px; padding:0 16px;
+  font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;
+}
+.seg button.on{ background:var(--ink); color:var(--bg); }
+.seg button + button{ border-left:1px solid var(--line); }
+.seg button.on + button{ border-left-color:transparent; }
+.tabbar{ flex:none; display:flex; justify-content:center; padding:10px 0 2px; }
+main{ flex:1; overflow-y:auto; padding:12px 16px 40px; }
+.pane.hidden{ display:none; }
+#cv{ width:100%; height:300px; display:block; touch-action:none; }
+.hint{ font-size:13px; color:var(--muted); line-height:1.55; text-align:center; margin:10px 0 14px; }
+.sizerow{ display:flex; align-items:center; gap:10px; margin:6px 0 2px; }
+.sizerow button{
+  width:46px; height:46px; border-radius:50%; border:1px solid var(--line); background:var(--bg);
+  color:var(--ink); font-size:22px; cursor:pointer; flex:none; font-family:inherit;
+}
+.sizerow button:active{ background:var(--soft); }
+input[type=range]{ flex:1; accent-color:var(--ink); height:46px; }
+.diaval{ text-align:center; font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; margin:2px 0 12px; }
+.card{ border:1px solid var(--line); border-radius:var(--radius); padding:18px 16px; text-align:center; }
+.card .big{ font-size:44px; font-weight:800; letter-spacing:-0.5px; }
+.card .big small{ font-size:16px; font-weight:700; color:var(--muted); }
+.eqgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+.eq{ border:1px solid var(--line); border-radius:10px; padding:8px 4px; }
+.eq .k{ font-size:10px; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); }
+.eq .v{ font-size:17px; font-weight:700; margin-top:2px; }
+.diarow{ margin-top:12px; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.diarow b{ color:var(--ink); }
+.warn{ font-size:12px; color:var(--muted); text-align:center; margin-top:10px; }
+.convrow{ display:flex; gap:8px; margin:4px 0 12px; }
+.convrow input{
+  flex:1; border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--ink);
+  font-size:16px; padding:12px 14px; font-family:inherit; min-width:0;
+}
+.btn{
+  border:none; border-radius:12px; background:var(--ink); color:var(--bg);
+  font-size:15px; font-weight:700; padding:12px 20px; cursor:pointer; font-family:inherit; flex:none;
+}
+.btn:active{ opacity:0.85; }
+table{ width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; margin-top:6px; }
+th,td{ padding:9px 4px; text-align:center; border-bottom:1px solid var(--line); }
+th{ font-size:11px; text-transform:uppercase; letter-spacing:0.6px; color:var(--muted); font-weight:700; }
+tr.hl td{ background:var(--soft); font-weight:700; }
+tr.hl td:first-child{ border-radius:8px 0 0 8px; }
+tr.hl td:last-child{ border-radius:0 8px 8px 0; }
+.steps{ margin:18px 0 0; padding:0; list-style:none; counter-reset:s; }
+.steps li{
+  counter-increment:s; position:relative; padding:0 0 14px 38px;
+  font-size:14px; line-height:1.55; color:var(--ink);
+}
+.steps li::before{
+  content:counter(s); position:absolute; left:0; top:0; width:26px; height:26px;
+  border-radius:50%; border:1px solid var(--line); color:var(--muted);
+  font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.steps li small{ display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }
+.secttl{ font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:20px 0 4px; }
+/* calibration overlay */
+#calOverlay{
+  position:fixed; inset:0; background:var(--bg); z-index:50;
+  display:flex; flex-direction:column; align-items:center; padding:24px 20px 40px; overflow-y:auto;
+}
+#calOverlay.hidden{ display:none; }
+#calOverlay h2{ margin:6px 0 4px; font-size:20px; }
+#calOverlay p{ font-size:14px; color:var(--muted); line-height:1.55; text-align:center; max-width:340px; margin:0 0 18px; }
+#cardBox{
+  border:2px solid var(--ink); border-radius:10px; margin:10px auto 4px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; color:var(--ink);
+}
+#cardDim{ font-size:12px; color:var(--muted); margin-bottom:22px; font-variant-numeric:tabular-nums; }
+.calrow{ display:flex; align-items:center; gap:12px; width:100%; max-width:360px; margin-bottom:8px; }
+.calrow button{
+  width:52px; height:52px; border-radius:50%; border:1px solid var(--line); background:var(--bg);
+  color:var(--ink); font-size:24px; cursor:pointer; flex:none; font-family:inherit;
+}
+.calrow button:active{ background:var(--soft); }
+#calVal{ font-size:15px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; margin-bottom:20px; }
+.calbtns{ display:flex; gap:10px; width:100%; max-width:360px; }
+.calbtns .btn{ flex:1; padding:14px; }
+.btn.ghost{ background:var(--soft); color:var(--ink); border:1px solid var(--line); }
+</style>
+</head>
+<body>
+<header>
+  <img src="icons/icon-192.png" alt="RingSize icon">
+  <h1>RingSize</h1>
+  <button class="icbtn" id="calBtn" aria-label="Calibrate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
+</header>
+<div id="calNote"></div>
+<div class="tabbar">
+  <div class="seg" id="tabSeg">
+    <button data-tab="find" class="on">Find</button>
+    <button data-tab="chart">Chart</button>
+  </div>
+</div>
+
+<main>
+  <div class="pane" id="findPane">
+    <canvas id="cv"></canvas>
+    <p class="hint">Place a ring on the screen and drag the slider until the circle matches the ring's <b style="color:var(--ink)">inner</b> edge.</p>
+    <div class="sizerow">
+      <button id="diaMinus" aria-label="Smaller">−</button>
+      <input type="range" id="diaRange" min="13" max="23" step="0.1" value="17.3" aria-label="Circle diameter in mm">
+      <button id="diaPlus" aria-label="Larger">+</button>
+    </div>
+    <div class="diaval" id="diaVal">17.3 mm</div>
+    <div class="card">
+      <div class="big"><small>US&nbsp;</small><span id="rUS">7</span></div>
+      <div class="eqgrid">
+        <div class="eq"><div class="k">UK</div><div class="v" id="rUK">N</div></div>
+        <div class="eq"><div class="k">EU</div><div class="v" id="rEU">54.4</div></div>
+        <div class="eq"><div class="k">Japan</div><div class="v" id="rJP">14</div></div>
+        <div class="eq"><div class="k">India</div><div class="v" id="rIN">9</div></div>
+      </div>
+      <div class="diarow">inner diameter <b id="rDia">17.3 mm</b> · circumference <b id="rCirc">54.4 mm</b></div>
+    </div>
+    <p class="warn" id="uncalWarn">Uncalibrated — sizes are approximate. Tap the gear and match a credit card to calibrate.</p>
+  </div>
+
+  <div class="pane hidden" id="chartPane">
+    <div class="secttl">Convert a measurement</div>
+    <div class="convrow">
+      <input type="number" id="circInput" inputmode="decimal" placeholder="Finger circumference in mm" aria-label="Finger circumference in mm">
+      <button class="btn" id="convBtn">Convert</button>
+    </div>
+    <div class="card hidden" id="convCard" style="margin-bottom:6px;">
+      <div class="big"><small>US&nbsp;</small><span id="cUS">–</span></div>
+      <div class="eqgrid">
+        <div class="eq"><div class="k">UK</div><div class="v" id="cUK">–</div></div>
+        <div class="eq"><div class="k">EU</div><div class="v" id="cEU">–</div></div>
+        <div class="eq"><div class="k">Japan</div><div class="v" id="cJP">–</div></div>
+        <div class="eq"><div class="k">India</div><div class="v" id="cIN">–</div></div>
+      </div>
+    </div>
+    <div class="secttl">Size chart</div>
+    <table id="sizeTable">
+      <thead><tr><th>US</th><th>UK</th><th>EU</th><th>JP</th><th>IN</th><th>⌀ mm</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="secttl">No ring? Use a paper strip</div>
+    <ol class="steps">
+      <li>Wrap a thin strip of paper around the base of your finger.<small>Snug, not tight — measure in the evening when fingers are largest.</small></li>
+      <li>Mark where the strip overlaps, then lay it flat.</li>
+      <li>Measure the marked length in mm against any ruler — that's your circumference.<small>Type it above to get your size in every system.</small></li>
+    </ol>
+  </div>
+</main>
+
+<div id="calOverlay" class="hidden">
+  <h2>Calibrate</h2>
+  <p>Hold a real credit card flat against the screen. Adjust until the outline matches the card exactly.</p>
+  <div id="cardBox">CARD</div>
+  <div id="cardDim">85.60 mm wide</div>
+  <div class="calrow">
+    <button id="calMinus" aria-label="Smaller">−</button>
+    <input type="range" id="calRange" min="2" max="6" step="0.005" value="3.78" aria-label="Calibration">
+    <button id="calPlus" aria-label="Larger">+</button>
+  </div>
+  <div id="calVal"></div>
+  <div class="calbtns">
+    <button class="btn ghost" id="calReset">Reset</button>
+    <button class="btn" id="calDone">Done</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- size data: us, uk, jp, euCircMm, india, diaMm ---------- */
+const SIZES = [
+  [3,   'F','4', 44.2, 1,  14.1],
+  [3.5, 'G','5', 45.5, 2,  14.5],
+  [4,   'H','7', 46.8, 3,  14.9],
+  [4.5, 'I','8', 48.0, 4,  15.3],
+  [5,   'J','9', 49.3, 5,  15.7],
+  [5.5, 'K','10',50.6, 6,  16.1],
+  [6,   'L','12',51.9, 7,  16.5],
+  [6.5, 'M','13',53.1, 8,  16.9],
+  [7,   'N','14',54.4, 9,  17.3],
+  [7.5, 'O','15',55.7, 10, 17.7],
+  [8,   'P','17',57.0, 11, 18.1],
+  [8.5, 'Q','18',58.3, 12, 18.5],
+  [9,   'R','19',59.5, 13, 18.9],
+  [9.5, 'S','20',60.8, 14, 19.3],
+  [10,  'T','22',62.1, 15, 19.7],
+  [10.5,'U','23',63.4, 16, 20.1],
+  [11,  'V','24',64.6, 17, 20.5],
+  [11.5,'W','26',65.9, 18, 20.9],
+  [12,  'X','27',67.2, 19, 21.3],
+  [12.5,'Y','28',68.5, 20, 21.7],
+  [13,  'Z','29',69.7, null,22.1],
+];
+function nearestByDia(diaMm) {
+  let best = SIZES[0], bd = Infinity;
+  for (const r of SIZES) {
+    const d = Math.abs(r[5] - diaMm);
+    if (d < bd) { bd = d; best = r; }
+  }
+  return best;
+}
+function fmtIN(v) { return v == null ? '—' : String(v); }
+
+/* ---------- calibration (shared key with Ruler app) ---------- */
+const CAL_KEY = 'ruler-pxPerMm';
+const CSS_PX_PER_MM = 96 / 25.4;
+let pxPerMm = CSS_PX_PER_MM;
+let calibrated = false;
+function loadCal() {
+  try {
+    const v = parseFloat(localStorage.getItem(CAL_KEY));
+    if (v > 1 && v < 10) { pxPerMm = v; calibrated = true; }
+  } catch (e) {}
+}
+function saveCal() {
+  try { localStorage.setItem(CAL_KEY, String(pxPerMm)); } catch (e) {}
+}
+function mmToPx(mm) { return mm * pxPerMm; }
+
+/* ---------- find tab ---------- */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+let diaMm = 17.3;
+const css = getComputedStyle(document.body);
+function ink() { return css.getPropertyValue('--ink').trim() || '#111'; }
+function muted() { return css.getPropertyValue('--muted').trim() || '#8a8a8a'; }
+function bgc() { return css.getPropertyValue('--bg').trim() || '#fff'; }
+
+function drawCircle() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = bgc(); ctx.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2;
+  const lw = 12; // stroke width; inner edge is the exact size
+  const r = mmToPx(diaMm) / 2 + lw / 2;
+  ctx.strokeStyle = ink(); ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke();
+  // center tick
+  ctx.fillStyle = muted();
+  ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, 7); ctx.fill();
+  // diameter label under the circle
+  ctx.fillStyle = muted();
+  ctx.font = '600 13px -apple-system, Segoe UI, Roboto, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('⌀ ' + diaMm.toFixed(1) + ' mm', cx, cy + r + 14);
+}
+function showSize(row) {
+  document.getElementById('rUS').textContent = row[0];
+  document.getElementById('rUK').textContent = row[1];
+  document.getElementById('rEU').textContent = row[3].toFixed(1);
+  document.getElementById('rJP').textContent = row[2];
+  document.getElementById('rIN').textContent = fmtIN(row[4]);
+  document.getElementById('rDia').textContent = row[5].toFixed(1) + ' mm';
+  document.getElementById('rCirc').textContent = (row[5] * Math.PI).toFixed(1) + ' mm';
+  // highlight matching chart row
+  document.querySelectorAll('#sizeTable tbody tr').forEach(tr => {
+    tr.classList.toggle('hl', tr.dataset.us === String(row[0]));
+  });
+}
+function updateFind() {
+  document.getElementById('diaVal').textContent = diaMm.toFixed(1) + ' mm';
+  document.getElementById('diaRange').value = diaMm;
+  drawCircle();
+  showSize(nearestByDia(diaMm));
+}
+const diaRange = document.getElementById('diaRange');
+diaRange.addEventListener('input', () => { diaMm = parseFloat(diaRange.value); updateFind(); });
+document.getElementById('diaMinus').addEventListener('click', () => { diaMm = Math.max(13, +(diaMm - 0.5).toFixed(1)); updateFind(); });
+document.getElementById('diaPlus').addEventListener('click', () => { diaMm = Math.min(23, +(diaMm + 0.5).toFixed(1)); updateFind(); });
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  W = cv.clientWidth; H = cv.clientHeight;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  drawCircle();
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+
+/* ---------- chart tab ---------- */
+(function buildTable() {
+  const tb = document.querySelector('#sizeTable tbody');
+  SIZES.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.dataset.us = String(r[0]);
+    tr.innerHTML = '<td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[3].toFixed(1) + '</td><td>' + r[2] + '</td><td>' + fmtIN(r[4]) + '</td><td>' + r[5].toFixed(1) + '</td>';
+    tb.appendChild(tr);
+  });
+})();
+document.getElementById('convBtn').addEventListener('click', () => {
+  const v = parseFloat(document.getElementById('circInput').value);
+  const card = document.getElementById('convCard');
+  if (!(v > 30 && v < 80)) { card.classList.add('hidden'); return; }
+  const row = nearestByDia(v / Math.PI);
+  document.getElementById('cUS').textContent = row[0];
+  document.getElementById('cUK').textContent = row[1];
+  document.getElementById('cEU').textContent = row[3].toFixed(1);
+  document.getElementById('cJP').textContent = row[2];
+  document.getElementById('cIN').textContent = fmtIN(row[4]);
+  card.classList.remove('hidden');
+});
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('#tabSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#tabSeg button').forEach(x => x.classList.toggle('on', x === b));
+    const find = b.dataset.tab === 'find';
+    document.getElementById('findPane').classList.toggle('hidden', !find);
+    document.getElementById('chartPane').classList.toggle('hidden', find);
+    if (find) resize();
+  });
+});
+
+/* ---------- calibration overlay ---------- */
+const calOverlay = document.getElementById('calOverlay');
+const cardBox = document.getElementById('cardBox');
+const calRange = document.getElementById('calRange');
+const calVal = document.getElementById('calVal');
+const calNote = document.getElementById('calNote');
+const uncalWarn = document.getElementById('uncalWarn');
+const CARD_MM = 85.6;
+function calDraw() {
+  const w = Math.round(mmToPx(CARD_MM));
+  const h = Math.round(mmToPx(53.98));
+  cardBox.style.width = w + 'px';
+  cardBox.style.height = h + 'px';
+  calVal.textContent = pxPerMm.toFixed(3) + ' px/mm';
+}
+function calNoteDraw() {
+  calNote.innerHTML = calibrated
+    ? 'Calibrated · <b>' + pxPerMm.toFixed(2) + ' px/mm</b> — tap the gear to recalibrate'
+    : 'Uncalibrated — approximate. Tap the gear and hold a credit card to the screen.';
+  uncalWarn.style.display = calibrated ? 'none' : '';
+}
+document.getElementById('calBtn').addEventListener('click', () => {
+  calRange.value = pxPerMm;
+  calDraw();
+  calOverlay.classList.remove('hidden');
+});
+document.getElementById('calDone').addEventListener('click', () => {
+  calibrated = true; saveCal(); calNoteDraw();
+  calOverlay.classList.add('hidden'); drawCircle();
+});
+document.getElementById('calReset').addEventListener('click', () => {
+  pxPerMm = CSS_PX_PER_MM; calibrated = false;
+  try { localStorage.removeItem(CAL_KEY); } catch (e) {}
+  calRange.value = pxPerMm; calDraw(); calNoteDraw();
+});
+calRange.addEventListener('input', () => { pxPerMm = parseFloat(calRange.value); calDraw(); });
+document.getElementById('calMinus').addEventListener('click', () => {
+  pxPerMm = Math.min(6, Math.max(2, +(pxPerMm - 0.02).toFixed(3)));
+  calRange.value = pxPerMm; calDraw();
+});
+document.getElementById('calPlus').addEventListener('click', () => {
+  pxPerMm = Math.min(6, Math.max(2, +(pxPerMm + 0.02).toFixed(3)));
+  calRange.value = pxPerMm; calDraw();
+});
+
+/* ---------- init ---------- */
+loadCal();
+calNoteDraw();
+requestAnimationFrame(() => { resize(); updateFind(); });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
